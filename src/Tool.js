@@ -175,6 +175,7 @@ class Experiment extends Component {
     this._submitHITform = this._submitHITform.bind(this);
     this._addHiddenField = this._addHiddenField.bind(this);
     this._onLoadedVideo = this._onLoadedVideo.bind(this);
+    this._onVideoEnd = this._onVideoEnd.bind(this);
   }
 
   _gup(name) {
@@ -411,7 +412,7 @@ class Experiment extends Component {
     console.log("current video interval: " + this.state.currentVideoInterval)
     // setTimeout(() => this.setState({showGame: false, showQuestion: true}), this.state.currentVideoInterval + 3000)
 
-    // document.addEventListener("keydown", this._handleKeyDown);
+    document.addEventListener("keydown", this._handleKeyDown);
   }
 
   _onLoadedVideo() {
@@ -419,8 +420,15 @@ class Experiment extends Component {
     console.log('Video is loaded!')
     // this.state.currentVideoIndex = this.state.currentVideoIndex + 1;
     // this.setState({currentVideoIndex: this.state.currentVideoIndex + 1})
-    setTimeout(() => this._loadNextVideo(), 3000);
   
+  }
+
+  _onVideoEnd() {
+    // This is called when the video ends
+    console.log('Video ended!')
+    this._loadNextVideo()
+    // setTimeout(() => this._loadNextVideo(), 50);
+
   }
 
   _loadNextLevel() {
@@ -456,11 +464,12 @@ class Experiment extends Component {
 
     // Push recognized response
     this.state.responses.push({'video': this.state.currentVideo, 'sequence_position': this.state.currentVideoIndex, 'response_time': performance.now() - this.state.timer});
+    console.log("SPACEBAR")
     // this.setState({
     //   left: true,
     //   percent: this.state.percent + 100/this.state.maxImages,
     // });
-    setTimeout(() => this._loadNextVideo(), 300);
+    setTimeout(() => this._loadNextVideo(), 200);
   }
 
 
@@ -546,6 +555,7 @@ class Experiment extends Component {
                     onLoadStart={() => {
                       console.log('...I am loading...')
                     }}
+                    onEnded={this._onVideoEnd}
                     onLoadedData={this._onLoadedVideo}
                     />
                 </div>

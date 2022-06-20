@@ -1,6 +1,6 @@
 {
-  "short_name": "timed_df_exp",
-  "name": "Timed Deepfake Detection Experiment",
+  "short_name": "video_memory_experiment",
+  "name": "Video Memory Experiment",
   "icons": [
   ],
   "start_url": ".",

@@ -8,9 +8,9 @@ import 'rc-slider/assets/index.css';
 import { Progress } from 'react-sweet-progress';
 import "react-sweet-progress/lib/style.css";
 
-// import PlusIcon from './plus.png';
-// import PlusIconBig from './plus_big.png';
-// import tmp from './jsons_2vig/json_0.json';
+import PlusIcon from './plus.png';
+import PlusIconBig from './plus_big.png';
+import tmp from './jsons/EEG_videos_sub_1.json';
 import $ from 'jquery';
 
 import { Dropbox } from 'dropbox';
@@ -20,7 +20,8 @@ const dbx = new Dropbox({
 });
 
 const MTURK_SUBMIT_SUFFIX = "/mturk/externalSubmit";
-const JSON_IDENTIFIER = 'data'
+const JSON_IDENTIFIER = 'data';
+const MEMENTO_HOST_PREFIX = 'https://data.csail.mit.edu/soundnet/actions3/';
 
 const styles = theme => ({
   root: {
@@ -151,8 +152,7 @@ class Experiment extends Component {
       startLoadingVideo: false,
       time: performance.now(),
       timer: performance.now(),
-      response_times: [],
-      videoChoices: [],
+      responses: [],
       videoSize: 360,
       videoData: tmp,
       maxLevels: Object.keys(tmp).length,
@@ -167,9 +167,8 @@ class Experiment extends Component {
 
     this._handleClick = this._handleClick.bind(this);
     this._handleClose = this._handleClose.bind(this);
-    this._handleFakeButton = this._handleFakeButton.bind(this);
-    this._handleRealButton = this._handleRealButton.bind(this);  
-    this._handleResponseButton = this._handleResponseButton.bind(this);
+    this._handleKeyDown = this._handleKeyDown.bind(this);
+    this._handleSpacebar = this._handleSpacebar.bind(this);
     this._handleStartButton = this._handleStartButton.bind(this);
     this._handleSubmitButton = this._handleSubmitButton.bind(this);
     this._gup = this._gup.bind(this);
@@ -251,48 +250,48 @@ class Experiment extends Component {
     setTimeout(() => this.setState({showGame: true, buttonText: 'NEXT LEVEL', timer: performance.now()}), 3000);
   }
 
-  _handleFakeButton() {
-    // This handles the FAKE option after video is shown
-    this._handleResponseButton('FAKE');
-  }
+  // _handleFakeButton() {
+  //   // This handles the FAKE option after video is shown
+  //   this._handleResponseButton('FAKE');
+  // }
 
-  _handleRealButton() {
-    // This handles the REAL option after video is shown
-    this._handleResponseButton('REAL');
-  }
+  // _handleRealButton() {
+  //   // This handles the REAL option after video is shown
+  //   this._handleResponseButton('REAL');
+  // }
 
-  _handleResponseButton(resp) {
-    // General function to handle clicking either FAKE or REAL
+  // _handleResponseButton(resp) {
+  //   // General function to handle clicking either FAKE or REAL
 
-    // If button disabled, do nothing
-    if (this.state.responseButtonDisabled) {
-      return;
-    }
+  //   // If button disabled, do nothing
+  //   if (this.state.responseButtonDisabled) {
+  //     return;
+  //   }
 
-    // Disable button to avoid double clicking
-    this.setState({responseButtonDisabled: true});
+  //   // Disable button to avoid double clicking
+  //   this.setState({responseButtonDisabled: true});
 
-    // Compute response_time
-    let response_time = performance.now() - this.state.timer
+  //   // Compute response_time
+  //   let response_time = performance.now() - this.state.timer
 
-    // Push response to videoChoices
-    this.state.videoChoices.push({'response': resp, 
-                                  'response_time': response_time, 
-                                  'video': this.state.currentVideo, 
-                                  'pres_time': this.state.currentVideoInterval, 
-                                  'label':this.state.currentVideoLabel});
+  //   // Push response to videoChoices
+  //   this.state.videoChoices.push({'response': resp, 
+  //                                 'response_time': response_time, 
+  //                                 'video': this.state.currentVideo, 
+  //                                 'pres_time': this.state.currentVideoInterval, 
+  //                                 'label':this.state.currentVideoLabel});
     
-    // Update level completion
-    this.setState({
-      percentLevelCompletion: this.state.percentLevelCompletion + 100/this.state.maxVideos,
-    });
+  //   // Update level completion
+  //   this.setState({
+  //     percentLevelCompletion: this.state.percentLevelCompletion + 100/this.state.maxVideos,
+  //   });
 
-    // Debugging logs
-    console.log("length of videoChoices: ", this.state.videoChoices.length)
+  //   // Debugging logs
+  //   console.log("length of videoChoices: ", this.state.videoChoices.length)
 
-    // Load next video after a few miliseconds (better UX, feels smoother)
-    setTimeout(() => this._loadNextVideo(), 150);
-  }
+  //   // Load next video after a few miliseconds (better UX, feels smoother)
+  //   setTimeout(() => this._loadNextVideo(), 150);
+  // }
 
   _handleSubmitButton() {
     // This handles the submit button logic
@@ -303,7 +302,6 @@ class Experiment extends Component {
       this._loadNextLevel();
     } else {
       console.log("entering SUBMIT portion of _handleSubmitButton")
-      // var res = {'videoChoices': this.state.videoChoices, 'response_times': this.state.reponse_times};
       this.setState({showSubmit: false, showEnd: true, mainButtonDisabled: true});
       this._submitHITform();
       
@@ -323,7 +321,7 @@ class Experiment extends Component {
                   'AssignmentId': assigId,
                   'WorkerId': workerId,
                   'json': current_json,
-                  'results': this.state.videoChoices}
+                  'responses': this.state.responses}
       var dbxJSON = JSON.stringify(res);
       var dbx_name = 'HITId_' + hitId + '_workerId_' + workerId + '_' + current_json
 
@@ -351,7 +349,7 @@ class Experiment extends Component {
     this._addHiddenField(form, 'json', this._gup(JSON_IDENTIFIER));
     // this._addHiddenField(form, 'taskTime', (Date.now() - this.state.timer)/1000);
     // this._addHiddenField(form, 'feedback', $("#feedback-input").val());
-    this._addHiddenField(form, 'results', JSON.stringify(this.state.videoChoices));
+    this._addHiddenField(form, 'results', JSON.stringify(this.state.responses));
     // $("#submit-form").attr("action", submitUrl);
     // $("#submit-form").attr("method", "POST");
     // $("#submit-form").submit();
@@ -365,8 +363,7 @@ class Experiment extends Component {
   }
 
   _loadNextVideo() {
-    // Loads next video after clicking a REAL or FAKE button inside a level
-    // If there are no more videos, show submit button and return
+    // Loads next video after the previous video played for 3 seconds
 
     if (Math.round(this.state.percentLevelCompletion) >= 100) {
       this.setState({percentLevelCompletion: 100});
@@ -391,10 +388,8 @@ class Experiment extends Component {
     }
 
     // Setting the current video data into the state
-    this.setState({currentVideo: videoData["url"],
+    this.setState({currentVideo: videoData,
       currentVideoIndex: this.state.currentVideoIndex + 1})
-
-    // this.setState({showGame: true, showQuestion: false, overclick: false});
 
     // Hiding the Game and showing button countdown
     this.setState({showGame: false, buttonText: "3 | Please focus on the fixation cross"});
@@ -422,7 +417,9 @@ class Experiment extends Component {
   _onLoadedVideo() {
     // This is called when the video is loaded
     console.log('Video is loaded!')
-    setTimeout(() => this.setState({showGame: false, responseButtonDisabled: false}), this.state.currentVideoInterval);
+    // this.state.currentVideoIndex = this.state.currentVideoIndex + 1;
+    // this.setState({currentVideoIndex: this.state.currentVideoIndex + 1})
+    setTimeout(() => this._loadNextVideo(), 3000);
   
   }
 
@@ -438,9 +435,32 @@ class Experiment extends Component {
       currentVideoIndex: 0,
       mainButtonDisabled: true,
     }, () => this._loadNextVideo())
-    // if (this.state.currentLevel >= this.state.maxLevels) {
-    //   this.setState({buttonText: 'SUBMIT'})
-    // }
+
+  }
+
+  _handleKeyDown = (event) => {
+    document.removeEventListener("keydown", this._handleKeyDown);
+
+    if (this.state.percent === 100) { return; }
+    switch(event.keyCode) {
+      case 32:  // SPACEBAR
+        this._handleSpacebar();
+        break;
+      default:
+        document.addEventListener("keydown", this._handleKeyDown);
+        break
+    }
+  }
+
+  _handleSpacebar() {
+
+    // Push recognized response
+    this.state.responses.push({'video': this.state.currentVideo, 'sequence_position': this.state.currentVideoIndex, 'response_time': performance.now() - this.state.timer});
+    // this.setState({
+    //   left: true,
+    //   percent: this.state.percent + 100/this.state.maxImages,
+    // });
+    setTimeout(() => this._loadNextVideo(), 300);
   }
 
 
@@ -518,7 +538,7 @@ class Experiment extends Component {
                     poster={PlusIconBig}
                     id="main-video"
                     style={{height: videoSize}}
-                    src={currentVideo}
+                    src={MEMENTO_HOST_PREFIX+currentVideo}
                     type="video/mp4"
                     autoPlay
                     loop

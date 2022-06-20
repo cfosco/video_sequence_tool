@@ -1,0 +1,10 @@
+{
+  "short_name": "timed_df_exp",
+  "name": "Timed Deepfake Detection Experiment",
+  "icons": [
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#000000",
+  "background_color": "#ffffff"
+}
